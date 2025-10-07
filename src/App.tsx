@@ -3,16 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/auth/AuthProvider";
-import { AuthGuard } from "@/auth/AuthGuard";
-import AuthPage from "@/pages/Auth";
-import Dashboard from "@/pages/Dashboard";
-import Themes from "@/pages/Themes";
-import Recipes from "@/pages/Recipes";
-import Showcase from "@/pages/Showcase";
 import { ThemeProvider } from "@/theme/ThemeProvider";
 import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -22,27 +14,12 @@ const App = () => (
       <Toaster />
       <Sonner />
       <ThemeProvider>
-        <AuthProvider>
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<AuthPage />} />
-              <Route path="/themes" element={<Themes />} />
-              <Route path="/recipes" element={<Recipes />} />
-              <Route path="/showcase" element={<Showcase />} />
-              <Route
-                path="/dashboard"
-                element={
-                  <AuthGuard>
-                    <Dashboard />
-                  </AuthGuard>
-                }
-              />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="*" element={<Index />} />
+          </Routes>
+        </BrowserRouter>
       </ThemeProvider>
     </TooltipProvider>
   </QueryClientProvider>
