@@ -17,9 +17,10 @@ import { Search, Download, Filter } from 'lucide-react'
 import { ReactNode, useState } from 'react'
 
 export interface DataTableColumn<T> {
-  key: keyof T | string
+  key?: keyof T | string
+  accessorKey?: string  // Support TanStack Table format
   header: string
-  cell?: (row: T) => ReactNode
+  cell?: (row: T | { row: { original: T } }) => ReactNode  // Support both formats
   sortable?: boolean
   className?: string
 }
@@ -178,23 +179,55 @@ export function DataTable<T extends Record<string, unknown>>({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredData.map((row, rowIndex) => (
-                  <motion.tr
-                    key={rowIndex}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: rowIndex * 0.05 }}
-                    className="group hover:bg-muted/50"
-                  >
-                    {columns.map((column, colIndex) => (
-                      <TableCell key={colIndex} className={column.className}>
-                        {column.cell
-                          ? column.cell(row)
-                          : row[column.key as keyof T]}
-                      </TableCell>
-                    ))}
-                  </motion.tr>
-                ))}
+                {filteredData.map((row, rowIndex) => {
+                  // Guard: Ensure row exists
+                  if (!row) return null
+                  
+                  return (
+                    <motion.tr
+                      key={rowIndex}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: rowIndex * 0.05 }}
+                      className="group hover:bg-muted/50"
+                    >
+                      {columns.map((column, colIndex) => {
+                        const columnKey = column.accessorKey || column.key
+                        let cellContent: ReactNode = null
+
+                        try {
+                          if (column.cell) {
+                            // Support both formats: TanStack Table and simple
+                            // Try TanStack format first: { row: { original: row } }
+                            cellContent = column.cell({ row: { original: row } } as T & { row: { original: T } })
+                          } else if (columnKey) {
+                            // Fallback to direct key access
+                            cellContent = row[columnKey as keyof T] as ReactNode
+                          }
+                        } catch (error) {
+                          // If TanStack format fails, try simple format
+                          try {
+                            if (column.cell) {
+                              cellContent = column.cell(row)
+                            }
+                          } catch {
+                            // Last resort: show error placeholder
+                            if (process.env.NODE_ENV === 'development') {
+                              console.error('[DataTable] Cell render error:', error, { row, column })
+                            }
+                            cellContent = <span className="text-destructive">Error</span>
+                          }
+                        }
+
+                        return (
+                          <TableCell key={colIndex} className={column.className}>
+                            {cellContent}
+                          </TableCell>
+                        )
+                      })}
+                    </motion.tr>
+                  )
+                })}
               </TableBody>
             </Table>
           )}
