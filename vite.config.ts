@@ -5,7 +5,20 @@ import tsconfigPaths from 'vite-tsconfig-paths'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(), tsconfigPaths()],
+  plugins: [
+    react(),
+    tsconfigPaths(),
+    {
+      name: 'resolve-api-shared-js',
+      resolveId(source) {
+        if (source.includes('/shared/') && source.endsWith('.js')) {
+          // Allow resolving .js imports to .ts files in shared folder
+          // This bridges the gap between Vercel (needs .js) and Vite (needs .ts)
+          return source.replace('.js', '.ts');
+        }
+      }
+    }
+  ],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
